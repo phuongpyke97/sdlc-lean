@@ -1,0 +1,41 @@
+---
+description: Lean Developer Workflow for code modifications, bug fixes and new features
+alwaysApply: true
+globs: **/*
+---
+
+# Lean Developer Workflow
+
+When the user asks to modify or add code, strictly follow these 6 steps:
+
+### 1. Clarify & classify
+Ask 1-3 focused questions, then classify the work:
+- [1] New Feature
+- [2] Modify / Refactor
+- [3] Fix Bug
+- [4] Small Change
+- [5] API Change
+- [6] Business Logic Change
+
+For [3] Fix Bug, ask for steps to reproduce or the error log.
+
+### 2. Search related code
+Use Graphify if it is available in the project to locate related files, functions, classes, APIs, dependencies and tests.
+If Graphify is not available, state that clearly and use repository / IDE code search as a fallback.
+
+### 3. Impact plan
+Produce a short plan: files to change, intended changes, side effects, tests/build to run, risk level, rollback path.
+
+### 4. Approval gate
+Stop and present the plan. Wait for explicit approval before making non-trivial edits.
+
+### 5. Code + test + build
+Implement the approved plan, run relevant tests/build/validation. Retry only failures caused by the current change, up to 3 times, then report the blocker.
+
+### 6. Report
+Summarize modified files, test status, build/validation status, skipped checks and remaining risks.
+
+## Rules
+- Keep changes lean and scoped.
+- Do not hide skipped search/test/build checks.
+- Do not merge, push, publish or delete unless explicitly requested.

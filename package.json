@@ -1,0 +1,36 @@
+{
+  "name": "sdlc-workflow",
+  "version": "1.3.0",
+  "description": "Scaffold a Lean Developer Workflow (docs, templates, agent rules) for AI-assisted dev teams",
+  "type": "module",
+  "bin": {
+    "sdlc-workflow": "./bin/cli.js"
+  },
+  "scripts": {
+    "validate": "powershell -ExecutionPolicy Bypass -File scripts/validate-workflow.ps1"
+  },
+  "keywords": [
+    "sdlc",
+    "workflow",
+    "scaffold",
+    "cursor",
+    "claude",
+    "po",
+    "ba",
+    "architecture"
+  ],
+  "author": "",
+  "license": "MIT",
+  "files": [
+    "bin",
+    "docs",
+    "templates",
+    "adr",
+    ".github",
+    "scripts",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  }
+}

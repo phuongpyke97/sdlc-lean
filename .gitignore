@@ -1,0 +1,7 @@
+node_modules/
+*.log
+.DS_Store
+dist/
+
+# Lean SDLC runtime pointer (active epic). Epic folders under work/ are kept.
+work/.active

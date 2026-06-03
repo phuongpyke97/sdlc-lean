@@ -1,0 +1,19 @@
+name: Workflow Validation
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  validate:
+    name: Validate SDLC Lean framework
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate required workflow files
+        shell: pwsh
+        run: ./scripts/validate-workflow.ps1
