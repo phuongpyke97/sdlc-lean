@@ -484,6 +484,8 @@ This project uses the Lean Developer Workflow for code changes.
 
 ${SIX_STEP_BODY}
 
+${EPIC_LIFECYCLE_BODY}
+
 ## Small exact edits
 For exact low-risk user-requested edits, use lightweight approval and keep scope minimal.
 
