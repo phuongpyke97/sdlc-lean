@@ -382,6 +382,20 @@ Implement the approved plan, run relevant tests/build/validation. Retry only fai
 ### 6. Report
 Summarize modified files, test status, build/validation status, skipped checks and remaining risks.`;
 
+const MODULE_CONVENTION_BODY = `## Module convention (prefix slug)
+
+When a project has multiple modules, prefix the request with the module name so it lands in the epic slug (\`work/<NNN>-<slug>/\`):
+- \`sdlc-workflow new "auth: login API"\` -> \`00X-auth-login-api\`
+- \`sdlc-workflow new "billing: invoice pdf"\` -> \`00Y-billing-invoice-pdf\`
+
+Rules:
+- Module name first, single word (\`auth\`, \`billing\`), no internal hyphen -> groups cleanly.
+- Use a consistent separator (\`module: ...\`); slugify strips the punctuation, leaving \`<NNN>-<module>-<slug>\`.
+- \`NNN\` stays global (not per-module); the module lives right after the number.
+- List one module: \`Get-ChildItem work -Directory | Where-Object Name -match '^\\d+-auth-'\`
+- Group all: \`Get-ChildItem work -Directory | Group-Object { ($_.Name -replace '^\\d+-','') -replace '-.*','' } | Select-Object Name, Count\`
+- Folders stay flat and \`.active\` holds one epic -> no parallel epics across modules.`;
+
 const DB_SAFETY_BODY = `## IMPORTANT — Database safety (non-negotiable)
 - Do NOT use raw SQL to operate on the database. Always go through the project's ORM / query builder / repository layer.
 - Do NOT use tests, scripts, migrations, seeds or any mechanism to DELETE / DROP / UPDATE / TRUNCATE the user's database data.
@@ -456,6 +470,8 @@ ${SIX_STEP_BODY}
 
 ## Small exact edits
 For exact low-risk user-requested edits, use lightweight approval and keep scope minimal.
+
+${MODULE_CONVENTION_BODY}
 
 ## Rules
 - Keep changes lean and scoped.

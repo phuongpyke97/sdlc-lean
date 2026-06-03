@@ -10,6 +10,21 @@ Each task is an "epic" under `work/<NNN>-<slug>/` with its own brief + evidence 
 - While an epic is active, keep working in it — the user does not re-run `/sdlc-lean`.
 - `/finish` (or `node bin/cli.js finish`) → marks the epic done, writes `SUMMARY.md`, clears the active pointer. A new request starts a new epic.
 
+### Module convention (prefix slug)
+
+When a project has multiple modules, prefix the request with the module name so it lands in the slug:
+
+- `node bin/cli.js new "auth: login API"` → `00X-auth-login-api`
+- `node bin/cli.js new "billing: invoice pdf"` → `00Y-billing-invoice-pdf`
+
+Rules:
+- Module name first, single word (`auth`, `billing`), no internal hyphen → groups cleanly.
+- Use a consistent separator (`module: ...`); `slugify` strips the punctuation, leaving `<NNN>-<module>-<slug>`.
+- `NNN` stays global (not per-module); the module lives right after the number.
+- List one module: `Get-ChildItem work -Directory | Where-Object Name -match '^\d+-auth-'`
+- Group all: `Get-ChildItem work -Directory | Group-Object { ($_.Name -replace '^\d+-','') -replace '-.*','' } | Select-Object Name, Count`
+- Folders stay flat and `.active` holds one epic → no parallel epics across modules.
+
 ## Workflow for code changes
 
 When asked to modify or add code:
