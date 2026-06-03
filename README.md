@@ -77,6 +77,23 @@ Get-ChildItem work -Directory | Where-Object Name -match '^\d+-auth-'
 Get-ChildItem work -Directory | Group-Object { ($_.Name -replace '^\d+-','') -replace '-.*','' } | Select-Object Name, Count
 ```
 
+### Figma references (per epic)
+
+Every epic gets its own `work/<NNN>-<slug>/figma/` folder. For UI work, export the
+frames from Figma (PNG 2x; add SVG for vector assets) and drop them there, then ask
+the agent to design from the figma folder in that task:
+
+```text
+/sdlc-lean design the ABC screen from the figma folder in this task
+```
+
+The agent reads every image in `work/<id>/figma/`, extracts a design spec (layout,
+colors, spacing, typography, components), confirms the UI stack, then builds it.
+A PNG is **pixel-approximate**, not pixel-perfect — for higher fidelity also drop
+exact hex colors + font names (or `tokens.json`), SVG for icons/logos, and
+"Copy as CSS" snippets. Static images can't show hover/animation/responsive, so
+call those out in the request.
+
 ## Repository map
 
 ```text
@@ -86,6 +103,7 @@ adr/                          Architecture decision records
 .github/                      PR/issue templates + validation workflow
 scripts/validate-workflow.ps1 Lightweight structure/PR validation
 .claude/CLAUDE.md             Claude Code project instructions
+work/<NNN>-<slug>/            Per-epic brief + evidence + figma/ references
 ```
 
 ## Minimum Definition of Done
