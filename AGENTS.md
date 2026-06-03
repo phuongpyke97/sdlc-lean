@@ -21,14 +21,15 @@ For code changes:
 
 ## Epic workflow (one folder per task)
 
-Each task is an "epic" stored in `work/<NNN>-<slug>/` with its own brief and evidence files. The active epic is tracked in `work/.active`.
+Each task is an "epic" with its own brief and evidence files. With `--module` it nests under `work/<module>/<NNN>-<slug>/` (active pointer `work/<module>/.active`); without a module it stays flat in `work/<NNN>-<slug>/` (pointer `work/.active`).
 
 If your agent has slash commands (Claude Code, Cursor), use `/sdlc-lean` and `/finish`. Otherwise call the CLI directly:
 
-- **Start a task**: `npx sdlc-workflow new "Tôi muốn <goal> | Input <data> | Output <result>"`
-  → creates `work/<NNN>-<slug>/`, sets it active. Then fill `epic-brief.md` and run the 6-step loop, writing evidence into that folder.
+- **Detect the module**: if the request names a module/folder (e.g. "tại module elcom.vms.ups"), pass it via `--module`. Otherwise omit it.
+- **Start a task**: `npx sdlc-workflow new --module <module> "Tôi muốn <goal> | Input <data> | Output <result>"`
+  → creates `work/<module>/<NNN>-<slug>/`, sets it active (`NNN` resets per module). Then fill `epic-brief.md` and run the 6-step loop, writing evidence into that folder.
 - **Continue**: stay in the same epic — no need to re-run `new`.
-- **Finish**: `npx sdlc-workflow finish` → marks the epic done, writes `SUMMARY.md`, clears the active pointer.
+- **Finish**: `npx sdlc-workflow finish --module <module>` → marks the epic done, writes `SUMMARY.md`, clears that module's active pointer. Several modules can be active at once; with no module the CLI closes the only active epic or lists them.
 
 Prompt rule: phrase the request as `Tôi muốn <goal> | Dữ liệu đầu vào <input> | Kết quả mong muốn <output>` so the goal, input and expected output are explicit.
 

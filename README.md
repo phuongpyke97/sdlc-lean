@@ -48,46 +48,49 @@ See `docs/change-types.md`.
 
 ## Epics (CLI)
 
-Each task is an "epic" under `work/<NNN>-<slug>/` with its own brief + evidence files; the active epic is tracked in `work/.active`.
+Each task is an "epic" with its own brief + evidence files. With `--module` it nests under `work/<module>/<NNN>-<slug>/` (active pointer `work/<module>/.active`); without a module it stays flat in `work/<NNN>-<slug>/` (pointer `work/.active`).
 
 ```powershell
-sdlc-workflow init                      # scaffold workflow into the current project
-sdlc-workflow new "auth: login API"     # create work/001-auth-login-api/ and set it active
-sdlc-workflow finish                    # mark active epic done + write SUMMARY.md
+sdlc-workflow init                                       # scaffold workflow into the current project
+sdlc-workflow new "auth login API"                       # flat epic → work/001-auth-login-api/
+sdlc-workflow new --module elcom.vms.ups "tim comp A"    # → work/elcom.vms.ups/001-tim-comp-a/
+sdlc-workflow finish --module elcom.vms.ups              # close that module's active epic
+sdlc-workflow finish                                     # close the only active epic (errors if several)
 ```
 
-### Module convention (prefix slug)
+### Module convention (nested folders)
 
-When a project has multiple modules, prefix the request with the module name so it lands in the epic slug:
+When a project has multiple modules, group epics by module with `--module`. Epics nest under `work/<module>/<NNN>-<slug>/`:
 
-- `sdlc-workflow new "auth: login API"` → `001-auth-login-api`
-- `sdlc-workflow new "billing: invoice pdf"` → `002-billing-invoice-pdf`
+- `sdlc-workflow new --module elcom.vms.ups "tim component A"` → `work/elcom.vms.ups/001-tim-component-a/`
+- `sdlc-workflow new --module billing "invoice pdf"` → `work/billing/001-invoice-pdf/`
 
 Rules:
 
-- Module name first, single word (`auth`, `billing`), no internal hyphen → groups cleanly.
-- Use a consistent separator (`module: ...`); slugify strips the punctuation, leaving `<NNN>-<module>-<slug>`.
-- `NNN` stays global (not per-module); the module lives right after the number.
-- Folders stay flat and `.active` holds one epic → no parallel epics across modules.
+- The module name is kept as-is (e.g. `elcom.vms.ups`); only path-hostile characters are stripped.
+- `NNN` resets per module — each module counts from `001`.
+- The active pointer is per module (`work/<module>/.active`), so several modules can have an active epic at the same time.
+- `finish --module <name>` closes that module's active epic; with no module it closes the only active one, or lists modules if several are active.
+- Without `--module`, epics stay flat in `work/<NNN>-<slug>/` with a global `work/.active`.
 
-List one module / group all:
+List one module / all modules:
 
 ```powershell
-Get-ChildItem work -Directory | Where-Object Name -match '^\d+-auth-'
-Get-ChildItem work -Directory | Group-Object { ($_.Name -replace '^\d+-','') -replace '-.*','' } | Select-Object Name, Count
+Get-ChildItem work/elcom.vms.ups -Directory
+Get-ChildItem work -Directory
 ```
 
 ### Figma references (per epic)
 
-Every epic gets its own `work/<NNN>-<slug>/figma/` folder. For UI work, export the
-frames from Figma (PNG 2x; add SVG for vector assets) and drop them there, then ask
-the agent to design from the figma folder in that task:
+Every epic gets its own `figma/` folder (`work/<module>/<NNN>-<slug>/figma/`). For UI
+work, export the frames from Figma (PNG 2x; add SVG for vector assets) and drop them
+there, then ask the agent to design from the figma folder in that task:
 
 ```text
 /sdlc-lean design the ABC screen from the figma folder in this task
 ```
 
-The agent reads every image in `work/<id>/figma/`, extracts a design spec (layout,
+The agent reads every image in that epic's `figma/`, extracts a design spec (layout,
 colors, spacing, typography, components), confirms the UI stack, then builds it.
 A PNG is **pixel-approximate**, not pixel-perfect — for higher fidelity also drop
 exact hex colors + font names (or `tokens.json`), SVG for icons/logos, and
@@ -103,7 +106,7 @@ adr/                          Architecture decision records
 .github/                      PR/issue templates + validation workflow
 scripts/validate-workflow.ps1 Lightweight structure/PR validation
 .claude/CLAUDE.md             Claude Code project instructions
-work/<NNN>-<slug>/            Per-epic brief + evidence + figma/ references
+work/[<module>/]<NNN>-<slug>/ Per-epic brief + evidence + figma/ references
 ```
 
 ## Minimum Definition of Done

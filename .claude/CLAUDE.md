@@ -4,26 +4,27 @@ This project uses SDLC Lean as a lightweight AI-assisted development workflow.
 
 ## Epic workflow (one folder per task)
 
-Each task is an "epic" under `work/<NNN>-<slug>/` with its own brief + evidence files; the active epic is tracked in `work/.active`.
+Each task is an "epic" with its own brief + evidence files. With `--module` it nests under `work/<module>/<NNN>-<slug>/` (active pointer `work/<module>/.active`); without a module it stays flat in `work/<NNN>-<slug>/` (pointer `work/.active`).
 
-- `/sdlc-lean <request>` (or `node bin/cli.js new "<request>"`) → creates a new epic, sets it active, then run the 6-step loop below, writing evidence into the epic folder.
+- `/sdlc-lean <request>` (or `node bin/cli.js new [--module <name>] "<request>"`) → creates a new epic, sets it active, then run the 6-step loop below, writing evidence into the epic folder.
 - While an epic is active, keep working in it — the user does not re-run `/sdlc-lean`.
-- `/finish` (or `node bin/cli.js finish`) → marks the epic done, writes `SUMMARY.md`, clears the active pointer. A new request starts a new epic.
+- `/finish` (or `node bin/cli.js finish [--module <name>]`) → marks the epic done, writes `SUMMARY.md`, clears that module's active pointer. A new request starts a new epic.
 
-### Module convention (prefix slug)
+### Module convention (nested folders)
 
-When a project has multiple modules, prefix the request with the module name so it lands in the slug:
+When a project has multiple modules, group epics by module with `--module`. Epics nest under `work/<module>/<NNN>-<slug>/`:
 
-- `node bin/cli.js new "auth: login API"` → `00X-auth-login-api`
-- `node bin/cli.js new "billing: invoice pdf"` → `00Y-billing-invoice-pdf`
+- `node bin/cli.js new --module elcom.vms.ups "tim component A"` → `work/elcom.vms.ups/001-tim-component-a/`
+- `node bin/cli.js new --module billing "invoice pdf"` → `work/billing/001-invoice-pdf/`
 
 Rules:
-- Module name first, single word (`auth`, `billing`), no internal hyphen → groups cleanly.
-- Use a consistent separator (`module: ...`); `slugify` strips the punctuation, leaving `<NNN>-<module>-<slug>`.
-- `NNN` stays global (not per-module); the module lives right after the number.
-- List one module: `Get-ChildItem work -Directory | Where-Object Name -match '^\d+-auth-'`
-- Group all: `Get-ChildItem work -Directory | Group-Object { ($_.Name -replace '^\d+-','') -replace '-.*','' } | Select-Object Name, Count`
-- Folders stay flat and `.active` holds one epic → no parallel epics across modules.
+- The module name is kept as-is (e.g. `elcom.vms.ups`); only path-hostile characters are stripped.
+- `NNN` resets per module — each module counts from `001`.
+- The active pointer is per module (`work/<module>/.active`), so several modules can have an active epic at the same time.
+- `finish --module <name>` closes that module's active epic. With no module: closes the only active epic, or lists modules if several are active.
+- Without `--module`, epics stay flat in `work/<NNN>-<slug>/` with a global `work/.active`.
+- List one module: `Get-ChildItem work/elcom.vms.ups -Directory`
+- List all modules: `Get-ChildItem work -Directory`
 
 ## Workflow for code changes
 

@@ -164,10 +164,11 @@ para()
 para("Bước 1 — Mở một task (epic) mới:", bold=True)
 para("Trong AI agent (Claude Code / Cursor) dùng slash command:")
 code('/sdlc-lean Tôi muốn <goal> | Dữ liệu đầu vào <input> | Kết quả mong muốn <output>')
-para("Hoặc chạy CLI trực tiếp:")
-code('node bin/cli.js new "Tôi muốn tạo API login | Input: email+password | Output: JWT token"')
-para("→ Tạo work/<NNN>-<slug>/ kèm bộ file evidence, và set epic đó thành active "
-     "(ghi vào work/.active).", italic=True, color=GREY)
+para("Hoặc chạy CLI trực tiếp (kèm --module nếu thuộc một module cụ thể):")
+code('node bin/cli.js new --module elcom.vms.ups "Tôi muốn tạo API login | Input: email+password | Output: JWT token"')
+para("→ Tạo work/<module>/<NNN>-<slug>/ kèm bộ file evidence, và set epic đó thành active "
+     "(ghi vào work/<module>/.active). Không có --module thì epic nằm phẳng ở work/<NNN>-<slug>/ "
+     "với con trỏ work/.active. Số NNN đếm lại từ 001 theo từng module.", italic=True, color=GREY)
 
 para()
 para("Bước 2 — Làm việc trong epic (vòng 6 bước):", bold=True)
@@ -179,9 +180,10 @@ para()
 para("Bước 3 — Đóng task khi hoàn thành:", bold=True)
 code("/finish")
 para("hoặc:")
-code("node bin/cli.js finish")
-para("→ Đánh dấu epic done, sinh SUMMARY.md, xóa con trỏ active. Request mới sẽ mở epic mới.",
-     italic=True, color=GREY)
+code("node bin/cli.js finish --module elcom.vms.ups")
+para("→ Đánh dấu epic done, sinh SUMMARY.md, xóa con trỏ active của module đó. Nhiều module "
+     "có thể active cùng lúc; nếu chỉ 1 epic active toàn project thì chạy finish không cần --module. "
+     "Request mới sẽ mở epic mới.", italic=True, color=GREY)
 
 para()
 para("Mẹo dùng tốt:", bold=True)
@@ -240,14 +242,15 @@ table(["Loại", "Dùng khi", "Tài liệu bắt buộc"],
 
 # ---------------------------------------------------------------- 5. Epic workflow
 h("7. Epic Workflow (một thư mục mỗi task)", 1)
-para("Mỗi task là một \"epic\" lưu tại work/<NNN>-<slug>/ với brief + file evidence riêng. "
-     "Epic đang hoạt động được theo dõi trong work/.active.")
+para("Mỗi task là một \"epic\" với brief + file evidence riêng. Có --module thì epic nằm lồng "
+     "trong work/<module>/<NNN>-<slug>/ (con trỏ work/<module>/.active); không có module thì nằm "
+     "phẳng ở work/<NNN>-<slug>/ (con trỏ work/.active). Số NNN đếm lại từ 001 theo từng module.")
 bullet("Tạo task mới — sets active, rồi chạy vòng 6 bước, ghi evidence vào folder epic.",
-       bold_prefix="/sdlc-lean <request>  (hoặc  node bin/cli.js new \"<request>\")  ")
+       bold_prefix="/sdlc-lean <request>  (hoặc  node bin/cli.js new [--module <name>] \"<request>\")  ")
 bullet("Trong khi epic active, tiếp tục làm trong đó — không cần chạy lại /sdlc-lean.",
        bold_prefix="Tiếp tục:  ")
-bullet("Đánh dấu done, ghi SUMMARY.md, xóa con trỏ active.",
-       bold_prefix="/finish  (hoặc  node bin/cli.js finish)  ")
+bullet("Đánh dấu done, ghi SUMMARY.md, xóa con trỏ active của module. Nhiều module active song song được.",
+       bold_prefix="/finish  (hoặc  node bin/cli.js finish [--module <name>])  ")
 
 para()
 para("Quy tắc prompt:", bold=True)
@@ -259,8 +262,8 @@ h("8. Lệnh CLI", 1)
 table(["Lệnh", "Tác dụng"],
       [["npx sdlc-workflow init", "Scaffold docs, templates, agent rules vào project"],
        ["npx sdlc-workflow install", "Cài global skills (Cursor, Codex) vào home dir"],
-       ['npx sdlc-workflow new "<text>"', "Bắt đầu task: tạo work/<NNN>-<slug>/ + set active"],
-       ["npx sdlc-workflow finish", "Đóng task active: mark done + ghi SUMMARY.md"],
+       ['npx sdlc-workflow new [--module <m>] "<text>"', "Bắt đầu task: tạo work/[<module>/]<NNN>-<slug>/ + set active"],
+       ["npx sdlc-workflow finish [--module <m>]", "Đóng task active của module: mark done + ghi SUMMARY.md"],
        ["npx sdlc-workflow version", "In version hiện tại"]])
 
 # ---------------------------------------------------------------- 7. Quickstart

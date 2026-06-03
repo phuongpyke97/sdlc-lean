@@ -39,17 +39,19 @@ async function main() {
   }
 
   if (command === "new") {
-    const request = args.slice(1).join(" ").trim();
+    const { module, rest } = extractModule(args.slice(1));
+    const request = rest.join(" ").trim();
     if (!request) {
-      console.error('Error: missing request. Usage: sdlc-workflow new "<what you want>"');
+      console.error('Error: missing request. Usage: sdlc-workflow new [--module <name>] "<what you want>"');
       process.exit(1);
     }
     try {
-      const epic = await newEpic(cwd, request);
+      const epic = await newEpic(cwd, request, module);
       console.log(`\nActive epic: ${epic.id}`);
       console.log(`  ${epic.dir}`);
       console.log("\nNext: fill epic-brief.md (Tôi muốn | Input | Output), then run the 6-step workflow.");
-      console.log("When the work is done, run `sdlc-workflow finish`.");
+      const finishHint = epic.module ? `sdlc-workflow finish --module ${epic.module}` : "sdlc-workflow finish";
+      console.log(`When the work is done, run \`${finishHint}\`.`);
     } catch (err) {
       console.error("Error:", err.message);
       process.exit(1);
@@ -58,11 +60,12 @@ async function main() {
   }
 
   if (command === "finish") {
+    const { module } = extractModule(args.slice(1));
     try {
-      const epic = await finishEpic(cwd);
+      const epic = await finishEpic(cwd, module);
       console.log(`\nFinished epic: ${epic.id}`);
-      console.log(`  ${join("work", epic.id, "SUMMARY.md")}`);
-      console.log("\nStart a new task with `sdlc-workflow new \"<what you want>\"`.");
+      console.log(`  ${join(epic.dir, "SUMMARY.md")}`);
+      console.log("\nStart a new task with `sdlc-workflow new [--module <name>] \"<what you want>\"`.");
     } catch (err) {
       console.error("Error:", err.message);
       process.exit(1);
@@ -89,17 +92,18 @@ async function main() {
   console.log("Usage: npx sdlc-workflow <command>");
   console.log("");
   console.log("Commands:");
-  console.log("  init           Scaffold lean workflow docs, templates and agent rules into current project");
-  console.log("  install        Install global agent skills (Cursor, Codex) to home directory");
-  console.log('  new "<text>"   Start a new task: create work/<NNN>-<slug>/ and set it active');
-  console.log("  finish         Close the active task: mark done + write SUMMARY.md");
-  console.log("  version        Print current version");
+  console.log("  init                       Scaffold lean workflow docs, templates and agent rules into current project");
+  console.log("  install                    Install global agent skills (Cursor, Codex) to home directory");
+  console.log('  new [--module <m>] "<text>"  Start a task: create work/[<module>/]<NNN>-<slug>/ and set it active');
+  console.log("  finish [--module <m>]      Close a module's active task: mark done + write SUMMARY.md");
+  console.log("  version                    Print current version");
   console.log("");
   console.log("Examples:");
-  console.log("  npx sdlc-workflow init                 # project-level setup");
-  console.log("  npx sdlc-workflow install              # global setup (~/.cursor, ~/.codex, ~/.agents)");
-  console.log('  npx sdlc-workflow new "tao api login"  # start a task');
-  console.log("  npx sdlc-workflow finish               # close the active task");
+  console.log("  npx sdlc-workflow init                                      # project-level setup");
+  console.log("  npx sdlc-workflow install                                   # global setup (~/.cursor, ~/.codex, ~/.agents)");
+  console.log('  npx sdlc-workflow new "tao api login"                       # flat epic (no module)');
+  console.log('  npx sdlc-workflow new --module elcom.vms.ups "tim comp A"   # epic under work/elcom.vms.ups/');
+  console.log("  npx sdlc-workflow finish --module elcom.vms.ups             # close that module's active epic");
   process.exit(1);
 }
 
@@ -147,7 +151,7 @@ async function scaffold(cwd) {
 }
 
 // ---------------------------------------------------------------------------
-// Epic lifecycle — one folder per task under work/<NNN>-<slug>/.
+// Epic lifecycle — one folder per task under work/[<module>/]<NNN>-<slug>/.
 // ---------------------------------------------------------------------------
 
 function slugify(text) {
@@ -161,13 +165,42 @@ function slugify(text) {
     .slice(0, 40) || "task";
 }
 
+// Keep the module name as-is (e.g. "elcom.vms.ups"); only strip characters that
+// are illegal/hostile in a path segment, plus leading/trailing dots and spaces.
+function sanitizeModule(name) {
+  return (name || "")
+    .replace(/[\/\\:*?"<>|]+/g, "")
+    .replace(/^[.\s]+|[.\s]+$/g, "")
+    .slice(0, 60);
+}
+
+// Pull a `--module <name>` (or `--module=<name>`) flag out of an argv slice,
+// returning the module (or "") and the remaining args.
+function extractModule(argv) {
+  const rest = [];
+  let module = "";
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
+    if (a === "--module" || a === "-m") {
+      module = sanitizeModule(argv[++i] || "");
+    } else if (a.startsWith("--module=")) {
+      module = sanitizeModule(a.slice("--module=".length));
+    } else {
+      rest.push(a);
+    }
+  }
+  return { module, rest };
+}
+
 function today() {
   return new Date().toISOString().slice(0, 10);
 }
 
-async function nextEpicNumber(workDir) {
-  if (!existsSync(workDir)) return 1;
-  const entries = await readdir(workDir, { withFileTypes: true });
+// Highest NNN among epic folders directly inside `epicsDir`, +1. Per-module when
+// epicsDir is work/<module>/, global when epicsDir is work/ (no-module legacy).
+async function nextEpicNumber(epicsDir) {
+  if (!existsSync(epicsDir)) return 1;
+  const entries = await readdir(epicsDir, { withFileTypes: true });
   let max = 0;
   for (const e of entries) {
     if (!e.isDirectory()) continue;
@@ -177,11 +210,13 @@ async function nextEpicNumber(workDir) {
   return max + 1;
 }
 
-async function newEpic(cwd, request) {
+async function newEpic(cwd, request, module = "") {
   const workDir = join(cwd, "work");
-  const num = await nextEpicNumber(workDir);
+  // With a module, epics nest under work/<module>/; without, they stay flat in work/.
+  const epicsDir = module ? join(workDir, module) : workDir;
+  const num = await nextEpicNumber(epicsDir);
   const id = `${String(num).padStart(3, "0")}-${slugify(request)}`;
-  const dir = join(workDir, id);
+  const dir = join(epicsDir, id);
   if (existsSync(dir)) throw new Error(`epic already exists: ${dir}`);
   await mkdir(dir, { recursive: true });
 
@@ -197,7 +232,7 @@ async function newEpic(cwd, request) {
     const raw = await readFile(join(tmplDir, name), "utf8");
     if (name === "epic-brief.template.md") {
       const filled = raw
-        .replace("<NNN-slug>", id)
+        .replace("<NNN-slug>", module ? `${module}/${id}` : id)
         .replace("<date>", today())
         .replace("<request>", request);
       await writeFile(join(dir, "epic-brief.md"), filled, "utf8");
@@ -211,25 +246,63 @@ async function newEpic(cwd, request) {
   // Per-epic figma reference folder — drop exported frames here for UI work.
   const figmaDir = join(dir, "figma");
   await mkdir(figmaDir, { recursive: true });
-  await writeFile(join(figmaDir, "README.md"), EPIC_FIGMA_README.replace(/<id>/g, id), "utf8");
+  const epicPath = module ? `work/${module}/${id}` : `work/${id}`;
+  await writeFile(join(figmaDir, "README.md"), EPIC_FIGMA_README.replace(/<path>/g, epicPath), "utf8");
   await writeFile(join(figmaDir, ".gitkeep"), "", "utf8");
 
-  await writeFile(join(workDir, ".active"), id + "\n", "utf8");
-  console.log(`Created work/${id}/ (${files.length} files + figma/)`);
-  return { id, dir };
+  // Active pointer lives next to the epics: per-module work/<module>/.active,
+  // or the legacy global work/.active when no module is given.
+  await writeFile(join(epicsDir, ".active"), id + "\n", "utf8");
+  const rel = module ? `work/${module}/${id}` : `work/${id}`;
+  console.log(`Created ${rel}/ (${files.length} files + figma/)`);
+  return { id, dir, module };
 }
 
-async function readActive(workDir) {
-  const ptr = join(workDir, ".active");
+async function readActive(epicsDir) {
+  const ptr = join(epicsDir, ".active");
   if (!existsSync(ptr)) return "";
   return (await readFile(ptr, "utf8")).trim();
 }
 
-async function finishEpic(cwd) {
+// Collect every active pointer under work/: each module's work/<module>/.active
+// plus the legacy global work/.active. Returns [{ module, id, epicsDir, dir }].
+async function findActives(workDir) {
+  const actives = [];
+  const flat = await readActive(workDir);
+  if (flat) actives.push({ module: "", id: flat, epicsDir: workDir, dir: join(workDir, flat) });
+  if (existsSync(workDir)) {
+    const entries = await readdir(workDir, { withFileTypes: true });
+    for (const e of entries) {
+      if (!e.isDirectory()) continue;
+      const epicsDir = join(workDir, e.name);
+      const id = await readActive(epicsDir);
+      if (id) actives.push({ module: e.name, id, epicsDir, dir: join(epicsDir, id) });
+    }
+  }
+  return actives;
+}
+
+async function finishEpic(cwd, module = "") {
   const workDir = join(cwd, "work");
-  const id = await readActive(workDir);
-  if (!id) throw new Error('no active epic. Start one with: sdlc-workflow new "<text>"');
-  const dir = join(workDir, id);
+
+  let target;
+  if (module) {
+    const id = await readActive(join(workDir, module));
+    if (!id) throw new Error(`no active epic in module "${module}".`);
+    target = { module, id, epicsDir: join(workDir, module), dir: join(workDir, module, id) };
+  } else {
+    const actives = await findActives(workDir);
+    if (actives.length === 0) {
+      throw new Error('no active epic. Start one with: sdlc-workflow new [--module <name>] "<text>"');
+    }
+    if (actives.length > 1) {
+      const list = actives.map((a) => `  --module ${a.module || "(none)"}  ->  ${a.id}`).join("\n");
+      throw new Error(`multiple active epics — pass --module to pick one:\n${list}`);
+    }
+    target = actives[0];
+  }
+
+  const { id, dir, epicsDir } = target;
   if (!existsSync(dir)) throw new Error(`active epic folder missing: ${dir}`);
 
   // Flip status + stamp finished date in epic-brief.md.
@@ -267,9 +340,9 @@ Finished: ${today()}
 `;
   await writeFile(join(dir, "SUMMARY.md"), summary, "utf8");
 
-  // Clear the active pointer.
-  await rm(join(workDir, ".active"), { force: true });
-  return { id, dir };
+  // Clear the active pointer for this module (or the legacy global one).
+  await rm(join(epicsDir, ".active"), { force: true });
+  return { id, dir, module };
 }
 
 async function installCursorRule(cwd) {
@@ -388,26 +461,27 @@ Implement the approved plan, run relevant tests/build/validation. Retry only fai
 ### 6. Report
 Summarize modified files, test status, build/validation status, skipped checks and remaining risks.`;
 
-const MODULE_CONVENTION_BODY = `## Module convention (prefix slug)
+const MODULE_CONVENTION_BODY = `## Module convention (nested folders)
 
-When a project has multiple modules, prefix the request with the module name so it lands in the epic slug (\`work/<NNN>-<slug>/\`):
-- \`sdlc-workflow new "auth: login API"\` -> \`00X-auth-login-api\`
-- \`sdlc-workflow new "billing: invoice pdf"\` -> \`00Y-billing-invoice-pdf\`
+When a project has multiple modules, group epics by module with \`--module\`. Epics nest under \`work/<module>/<NNN>-<slug>/\`:
+- \`sdlc-workflow new --module elcom.vms.ups "tim component A"\` -> \`work/elcom.vms.ups/001-tim-component-a/\`
+- \`sdlc-workflow new --module billing "invoice pdf"\` -> \`work/billing/001-invoice-pdf/\`
 
 Rules:
-- Module name first, single word (\`auth\`, \`billing\`), no internal hyphen -> groups cleanly.
-- Use a consistent separator (\`module: ...\`); slugify strips the punctuation, leaving \`<NNN>-<module>-<slug>\`.
-- \`NNN\` stays global (not per-module); the module lives right after the number.
-- List one module: \`Get-ChildItem work -Directory | Where-Object Name -match '^\\d+-auth-'\`
-- Group all: \`Get-ChildItem work -Directory | Group-Object { ($_.Name -replace '^\\d+-','') -replace '-.*','' } | Select-Object Name, Count\`
-- Folders stay flat and \`.active\` holds one epic -> no parallel epics across modules.`;
+- The module name is kept as-is (e.g. \`elcom.vms.ups\`); only path-hostile characters are stripped.
+- \`NNN\` resets per module — each module counts from \`001\`.
+- The active pointer is per module (\`work/<module>/.active\`), so several modules can have an active epic at the same time.
+- \`finish --module <name>\` closes that module's active epic. With no module: closes the only active epic, or lists modules if several are active.
+- Without \`--module\`, epics stay flat in \`work/<NNN>-<slug>/\` with a global \`work/.active\` (legacy / single-module projects).
+- List one module: \`Get-ChildItem work/<module> -Directory\`
+- List all modules: \`Get-ChildItem work -Directory\``;
 
-const EPIC_FIGMA_README = `# Figma references — <id>
+const EPIC_FIGMA_README = `# Figma references — <path>
 
 Drop the exported Figma frames for THIS task here, then point the agent at them.
 
 \`\`\`
-work/<id>/figma/
+<path>/figma/
   <frame-name>.png      # exported frame (File > Export, 2x PNG)
   <frame-name>.svg      # optional vector export (crisp icons / shapes)
   <frame-name>.css      # optional: Figma right-click > "Copy as CSS"
@@ -431,13 +505,13 @@ images can't show hover/animation/responsive — call those out in the request.
 
 const EPIC_LIFECYCLE_BODY = `## Epic workflow (one folder per task)
 
-Each task is an "epic" under \`work/<NNN>-<slug>/\` with its own brief + evidence files; the active epic is tracked in \`work/.active\`.
+Each task is an "epic" with its own brief + evidence files. With \`--module\` it nests under \`work/<module>/<NNN>-<slug>/\` (active pointer \`work/<module>/.active\`); without a module it stays flat in \`work/<NNN>-<slug>/\` (pointer \`work/.active\`).
 
-- \`sdlc-workflow new "<request>"\` -> creates a new epic, sets it active, then run the 6-step loop above, writing evidence into the epic folder.
+- \`sdlc-workflow new [--module <name>] "<request>"\` -> creates a new epic, sets it active, then run the 6-step loop above, writing evidence into the epic folder. \`NNN\` resets per module.
 - While an epic is active, keep working in it — do not create a new epic for follow-up work on the same task.
-- \`sdlc-workflow finish\` -> marks the epic done, writes \`SUMMARY.md\`, clears the active pointer. A new request starts a new epic.
+- \`sdlc-workflow finish [--module <name>]\` -> marks the epic done, writes \`SUMMARY.md\`, clears that module's active pointer. Several modules can be active at once.
 
-Each epic also gets a \`work/<NNN>-<slug>/figma/\` folder. For UI work, drop the exported Figma frames (PNG/SVG) for that task there, then ask the agent to design from \`figma/\` — it reads those images, extracts a design spec, confirms the stack, and builds. PNG is pixel-approximate; add hex colors / fonts / SVG / tokens.json for higher fidelity.`;
+Each epic also gets a \`figma/\` folder. For UI work, drop the exported Figma frames (PNG/SVG) for that task there, then ask the agent to design from \`figma/\` — it reads those images, extracts a design spec, confirms the stack, and builds. PNG is pixel-approximate; add hex colors / fonts / SVG / tokens.json for higher fidelity.`;
 
 const DB_SAFETY_BODY = `## IMPORTANT — Database safety (non-negotiable)
 - Do NOT use raw SQL to operate on the database. Always go through the project's ORM / query builder / repository layer.

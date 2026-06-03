@@ -35,6 +35,22 @@ Implement the approved plan, run relevant tests/build/validation. Retry only fai
 ### 6. Report
 Summarize modified files, test status, build/validation status, skipped checks and remaining risks.
 
+## Epic workflow (one folder per task)
+
+Each task is an "epic" with its own brief + evidence files. With `--module` it nests under `work/<module>/<NNN>-<slug>/` (active pointer `work/<module>/.active`); without a module it stays flat in `work/<NNN>-<slug>/` (pointer `work/.active`).
+
+- `/sdlc-lean <request>` (or `npx sdlc-workflow new [--module <name>] "<request>"`) → creates a new epic, sets it active, then run the 6-step loop above. `NNN` resets per module.
+- While an epic is active, keep working in it — do not create a new epic for follow-up work on the same task.
+- `/finish` (or `npx sdlc-workflow finish [--module <name>]`) → marks the epic done, writes `SUMMARY.md`, clears that module's active pointer. Several modules can be active at once.
+
+Each epic also gets a `figma/` folder — drop exported Figma frames there for UI work, then ask the agent to design from `figma/`.
+
+## Module convention (nested folders)
+
+When a project has multiple modules, group epics by module with `--module`:
+- `npx sdlc-workflow new --module elcom.vms.ups "tim component A"` → `work/elcom.vms.ups/001-tim-component-a/`
+- The module name is kept as-is; `NNN` resets per module; the active pointer is per module (`work/<module>/.active`).
+
 ## Rules
 - Keep changes lean and scoped.
 - Do not hide skipped search/test/build checks.
