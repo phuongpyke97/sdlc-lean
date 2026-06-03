@@ -46,6 +46,37 @@ See `docs/change-types.md`.
 6. Implement and attach test/build evidence.
 7. Open PR using `.github/PULL_REQUEST_TEMPLATE.md`.
 
+## Epics (CLI)
+
+Each task is an "epic" under `work/<NNN>-<slug>/` with its own brief + evidence files; the active epic is tracked in `work/.active`.
+
+```powershell
+sdlc-workflow init                      # scaffold workflow into the current project
+sdlc-workflow new "auth: login API"     # create work/001-auth-login-api/ and set it active
+sdlc-workflow finish                    # mark active epic done + write SUMMARY.md
+```
+
+### Module convention (prefix slug)
+
+When a project has multiple modules, prefix the request with the module name so it lands in the epic slug:
+
+- `sdlc-workflow new "auth: login API"` → `001-auth-login-api`
+- `sdlc-workflow new "billing: invoice pdf"` → `002-billing-invoice-pdf`
+
+Rules:
+
+- Module name first, single word (`auth`, `billing`), no internal hyphen → groups cleanly.
+- Use a consistent separator (`module: ...`); slugify strips the punctuation, leaving `<NNN>-<module>-<slug>`.
+- `NNN` stays global (not per-module); the module lives right after the number.
+- Folders stay flat and `.active` holds one epic → no parallel epics across modules.
+
+List one module / group all:
+
+```powershell
+Get-ChildItem work -Directory | Where-Object Name -match '^\d+-auth-'
+Get-ChildItem work -Directory | Group-Object { ($_.Name -replace '^\d+-','') -replace '-.*','' } | Select-Object Name, Count
+```
+
 ## Repository map
 
 ```text
