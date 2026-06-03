@@ -396,6 +396,14 @@ Rules:
 - Group all: \`Get-ChildItem work -Directory | Group-Object { ($_.Name -replace '^\\d+-','') -replace '-.*','' } | Select-Object Name, Count\`
 - Folders stay flat and \`.active\` holds one epic -> no parallel epics across modules.`;
 
+const EPIC_LIFECYCLE_BODY = `## Epic workflow (one folder per task)
+
+Each task is an "epic" under \`work/<NNN>-<slug>/\` with its own brief + evidence files; the active epic is tracked in \`work/.active\`.
+
+- \`sdlc-workflow new "<request>"\` -> creates a new epic, sets it active, then run the 6-step loop above, writing evidence into the epic folder.
+- While an epic is active, keep working in it — do not create a new epic for follow-up work on the same task.
+- \`sdlc-workflow finish\` -> marks the epic done, writes \`SUMMARY.md\`, clears the active pointer. A new request starts a new epic.`;
+
 const DB_SAFETY_BODY = `## IMPORTANT — Database safety (non-negotiable)
 - Do NOT use raw SQL to operate on the database. Always go through the project's ORM / query builder / repository layer.
 - Do NOT use tests, scripts, migrations, seeds or any mechanism to DELETE / DROP / UPDATE / TRUNCATE the user's database data.
@@ -453,6 +461,10 @@ A lightweight, dev-team-only workflow for AI-assisted code changes.
 const AGENTS_MD_CONTENT = `## Lean Developer Workflow
 
 ${SIX_STEP_BODY}
+
+${EPIC_LIFECYCLE_BODY}
+
+${MODULE_CONVENTION_BODY}
 
 ## Safety
 - Do not merge, push, publish, delete, or perform irreversible actions unless explicitly requested.
