@@ -115,7 +115,6 @@ async function scaffold(cwd) {
     ["adr", "adr"],
     [".github", ".github"],
     ["scripts", "scripts"],
-    ["figma", "figma"],
   ];
 
   for (const [src, dest] of assets) {
@@ -209,8 +208,14 @@ async function newEpic(cwd, request) {
     }
   }
 
+  // Per-epic figma reference folder — drop exported frames here for UI work.
+  const figmaDir = join(dir, "figma");
+  await mkdir(figmaDir, { recursive: true });
+  await writeFile(join(figmaDir, "README.md"), EPIC_FIGMA_README.replace(/<id>/g, id), "utf8");
+  await writeFile(join(figmaDir, ".gitkeep"), "", "utf8");
+
   await writeFile(join(workDir, ".active"), id + "\n", "utf8");
-  console.log(`Created work/${id}/ (${files.length} files)`);
+  console.log(`Created work/${id}/ (${files.length} files + figma/)`);
   return { id, dir };
 }
 
@@ -397,13 +402,42 @@ Rules:
 - Group all: \`Get-ChildItem work -Directory | Group-Object { ($_.Name -replace '^\\d+-','') -replace '-.*','' } | Select-Object Name, Count\`
 - Folders stay flat and \`.active\` holds one epic -> no parallel epics across modules.`;
 
+const EPIC_FIGMA_README = `# Figma references — <id>
+
+Drop the exported Figma frames for THIS task here, then point the agent at them.
+
+\`\`\`
+work/<id>/figma/
+  <frame-name>.png      # exported frame (File > Export, 2x PNG)
+  <frame-name>.svg      # optional vector export (crisp icons / shapes)
+  <frame-name>.css      # optional: Figma right-click > "Copy as CSS"
+  tokens.json           # optional: colors / spacing / typography tokens
+\`\`\`
+
+## How to use
+
+> /sdlc-lean design the ABC screen from the figma folder in this task
+
+The agent reads every image in this folder, extracts a design spec (layout,
+colors, spacing, typography, components), confirms the UI stack, then builds it.
+
+## Accuracy
+
+A PNG is **pixel-approximate**, not pixel-perfect (colors/spacing read by eye).
+For higher fidelity also drop exact hex colors + font names (or tokens.json),
+SVG for icons/logos, and "Copy as CSS" snippets for tricky elements. Static
+images can't show hover/animation/responsive — call those out in the request.
+`;
+
 const EPIC_LIFECYCLE_BODY = `## Epic workflow (one folder per task)
 
 Each task is an "epic" under \`work/<NNN>-<slug>/\` with its own brief + evidence files; the active epic is tracked in \`work/.active\`.
 
 - \`sdlc-workflow new "<request>"\` -> creates a new epic, sets it active, then run the 6-step loop above, writing evidence into the epic folder.
 - While an epic is active, keep working in it — do not create a new epic for follow-up work on the same task.
-- \`sdlc-workflow finish\` -> marks the epic done, writes \`SUMMARY.md\`, clears the active pointer. A new request starts a new epic.`;
+- \`sdlc-workflow finish\` -> marks the epic done, writes \`SUMMARY.md\`, clears the active pointer. A new request starts a new epic.
+
+Each epic also gets a \`work/<NNN>-<slug>/figma/\` folder. For UI work, drop the exported Figma frames (PNG/SVG) for that task there, then ask the agent to design from \`figma/\` — it reads those images, extracts a design spec, confirms the stack, and builds. PNG is pixel-approximate; add hex colors / fonts / SVG / tokens.json for higher fidelity.`;
 
 const DB_SAFETY_BODY = `## IMPORTANT — Database safety (non-negotiable)
 - Do NOT use raw SQL to operate on the database. Always go through the project's ORM / query builder / repository layer.
