@@ -115,6 +115,7 @@ async function scaffold(cwd) {
     ["adr", "adr"],
     [".github", ".github"],
     ["scripts", "scripts"],
+    ["figma", "figma"],
   ];
 
   for (const [src, dest] of assets) {

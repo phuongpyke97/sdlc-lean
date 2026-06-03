@@ -28,6 +28,7 @@
     "adr",
     ".github",
     "scripts",
+    "figma",
     "README.md"
   ],
   "engines": {
