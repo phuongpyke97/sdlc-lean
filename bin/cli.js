@@ -419,6 +419,10 @@ globs: **/*
 
 ${SIX_STEP_BODY}
 
+${EPIC_LIFECYCLE_BODY}
+
+${MODULE_CONVENTION_BODY}
+
 ## Rules
 - Keep changes lean and scoped.
 - Do not hide skipped search/test/build checks.
