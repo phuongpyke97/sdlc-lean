@@ -38,6 +38,8 @@ See `docs/change-types.md`.
 
 ## Quickstart for a team
 
+Full Vietnamese setup/use guide: `docs/huong-dan-cai-dat-va-su-dung.md`.
+
 1. Read `docs/workflow.md`.
 2. Pick the matching change-flow doc.
 3. Fill `templates/requirement-brief.md` or issue template.
