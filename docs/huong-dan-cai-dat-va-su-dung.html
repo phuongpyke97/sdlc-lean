@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Hướng dẫn cài đặt và sử dụng SDLC Lean</title>
+  <style>
+    :root { --bg:#f6f8fb; --card:#fff; --fg:#17202a; --muted:#5f6b7a; --border:#dbe3ec; --accent:#2563eb; --codebg:#eef4fb; }
+    @media (prefers-color-scheme: dark) { :root { --bg:#0b1020; --card:#111827; --fg:#e5e7eb; --muted:#a3b1c2; --border:#263244; --accent:#60a5fa; --codebg:#0f172a; } }
+    * { box-sizing:border-box; }
+    body { margin:0; font:16px/1.7 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; color:var(--fg); background:var(--bg); }
+    main { max-width: 1040px; margin: 0 auto; padding: 40px 24px 80px; background:var(--card); min-height:100vh; box-shadow:0 0 0 1px var(--border); }
+    h1 { font-size:2.1rem; line-height:1.2; margin:0 0 12px; padding-bottom:16px; border-bottom:2px solid var(--border); }
+    h2 { font-size:1.55rem; margin:40px 0 12px; padding-top:6px; border-top:1px solid var(--border); }
+    h3 { font-size:1.15rem; margin:24px 0 10px; }
+    p { margin:10px 0; }
+    ul, ol { margin: 10px 0 14px 24px; }
+    li { margin: 4px 0; }
+    code { font-family: ui-monospace,SFMono-Regular,Consolas,Monaco,monospace; background:var(--codebg); color:var(--fg); padding: .15em .35em; border-radius: 4px; }
+    pre { overflow:auto; background:var(--codebg); border:1px solid var(--border); border-radius:10px; padding:16px; margin:14px 0; }
+    pre code { background:transparent; padding:0; border-radius:0; display:block; white-space:pre; }
+    blockquote { margin:14px 0; padding:12px 16px; border-left:4px solid var(--accent); background:var(--codebg); color:var(--muted); }
+    table { width:100%; border-collapse:collapse; margin:14px 0 18px; }
+    th, td { border:1px solid var(--border); padding:10px 12px; vertical-align:top; text-align:left; }
+    th { background:var(--codebg); }
+    a { color:var(--accent); }
+    .toc { margin: 18px 0 30px; padding:16px 18px; border:1px solid var(--border); border-radius:12px; background:var(--codebg); }
+    .toc strong { display:block; margin-bottom:8px; }
+    .toc a { display:block; text-decoration:none; margin:2px 0; }
+    .note { color:var(--muted); }
+    @media print { body { background:#fff; } main { box-shadow:none; } }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Hướng dẫn cài đặt và sử dụng SDLC Lean</h1>
+  <p>Tài liệu này hướng dẫn từng bước từ lúc clone/pull repo, cài <code>sdlc-workflow</code>, init vào project mới, rồi tạo và hoàn tất một task cụ thể.</p>
+
+  <div class="toc">
+    <strong>Mục lục nhanh</strong>
+    <a href="#1-sdlc-lean-la-gi">1. SDLC Lean là gì?</a>
+    <a href="#2-yeu-cau-truoc-khi-bat-dau">2. Yêu cầu trước khi bắt đầu</a>
+    <a href="#3-lay-code-ve-tu-git">3. Lấy code về từ Git</a>
+    <a href="#4-cai-sdlc-workflow-de-dung-nhu-lenh-global">4. Cài sdlc-workflow</a>
+    <a href="#6-init-vao-project-moi">6. Init vào project mới</a>
+    <a href="#8-tao-task-epic-moi">8. Tạo task / epic mới</a>
+    <a href="#10-lam-task-cu-the-theo-tung-buoc">10. Làm task cụ thể theo từng bước</a>
+    <a href="#11-dung-voi-antigravity">11. Dùng với Antigravity</a>
+    <a href="#14-cac-loi-hay-gap">14. Các lỗi hay gặp</a>
+  </div>
+
+  <h2 id="1-sdlc-lean-la-gi">1. SDLC Lean là gì?</h2>
+  <p>SDLC Lean là bộ khung làm việc cho AI-assisted development:</p>
+  <ul>
+    <li>chia việc thành từng <strong>epic</strong> nhỏ</li>
+    <li>mỗi epic có folder riêng trong <code>work/</code></li>
+    <li>có bước <strong>Clarify → Search → Impact plan → Approval → Code/Test/Build → Report</strong></li>
+    <li>hỗ trợ nhiều agent: <strong>Claude Code</strong>, <strong>Cursor</strong>, <strong>Antigravity/Codex</strong></li>
+    <li>có hỗ trợ UI qua folder <code>figma/</code> trong từng epic</li>
+  </ul>
+
+  <h2 id="2-yeu-cau-truoc-khi-bat-dau">2. Yêu cầu trước khi bắt đầu</h2>
+  <p>Bạn cần:</p>
+  <ul>
+    <li>Node.js &gt;= 18</li>
+    <li>Git</li>
+    <li>quyền chạy lệnh trong terminal</li>
+    <li>1 project thật để áp dụng workflow</li>
+  </ul>
+  <p>Nếu đang dùng Windows:</p>
+  <ul>
+    <li>nên dùng PowerShell</li>
+    <li>có thể dùng <code>claude</code> hoặc mở project bằng Cursor/Antigravity</li>
+  </ul>
+
+  <h2 id="3-lay-code-ve-tu-git">3. Lấy code về từ Git</h2>
+  <h3>Cách 1: clone lần đầu</h3>
+  <pre><code>git clone https://github.com/phuongpyke97/sdlc-lean.git
+cd sdlc-lean</code></pre>
+  <h3>Cách 2: pull bản mới nhất</h3>
+  <p>Nếu đã có repo rồi:</p>
+  <pre><code>cd D:\AI\sdlc-lean
+git pull</code></pre>
+
+  <h2 id="4-cai-sdlc-workflow-de-dung-nhu-lenh-global">4. Cài <code>sdlc-workflow</code> để dùng như lệnh global</h2>
+  <p>Trong repo <code>sdlc-lean</code>, chạy:</p>
+  <pre><code>npm link</code></pre>
+  <p>Sau đó kiểm tra:</p>
+  <pre><code>sdlc-workflow version</code></pre>
+  <p>Kỳ vọng thấy version hiện tại, ví dụ <code>1.6.0</code>.</p>
+
+  <h2 id="5-cau-truc-sau-khi-cai-xong">5. Cấu trúc sau khi cài xong</h2>
+  <p><code>npm link</code> xong, bạn có command:</p>
+  <pre><code>sdlc-workflow</code></pre>
+  <p>Các lệnh chính:</p>
+  <ul>
+    <li><code>sdlc-workflow init</code></li>
+    <li><code>sdlc-workflow new [--module &lt;name&gt;] "&lt;request&gt;"</code></li>
+    <li><code>sdlc-workflow finish [--module &lt;name&gt;]</code></li>
+    <li><code>sdlc-workflow version</code></li>
+  </ul>
+
+  <h2 id="6-init-vao-project-moi">6. Init vào project mới</h2>
+  <h3>Bước 1 — vào đúng project</h3>
+  <p>Đi tới folder project thật bạn muốn áp dụng workflow:</p>
+  <pre><code>cd D:\path\to\your-project</code></pre>
+  <blockquote>Quan trọng: <code>sdlc-workflow</code> luôn chạy theo <strong>thư mục hiện tại</strong>. Đứng ở project nào thì init / new / finish sẽ ghi vào project đó.</blockquote>
+
+  <h3>Bước 2 — init workflow</h3>
+  <p>Chạy:</p>
+  <pre><code>sdlc-workflow init</code></pre>
+  <p>Lệnh này sẽ tạo vào project hiện tại:</p>
+  <ul>
+    <li><code>docs/</code></li>
+    <li><code>templates/</code></li>
+    <li><code>adr/</code></li>
+    <li><code>.github/</code></li>
+    <li><code>scripts/</code></li>
+    <li><code>.claude/</code></li>
+    <li><code>.cursor/</code></li>
+    <li><code>.agents/</code></li>
+    <li><code>AGENTS.md</code></li>
+    <li><code>README.md</code> / rule / command template tương ứng</li>
+  </ul>
+
+  <h3>Bước 3 — kiểm tra nhanh</h3>
+  <p>Bạn có thể kiểm tra:</p>
+  <pre><code>Get-ChildItem</code></pre>
+  <p>Kỳ vọng thấy các folder workflow vừa sinh.</p>
+
+  <h2 id="7-mo-project-bang-ai-agent">7. Mở project bằng AI agent</h2>
+  <h3>Claude Code</h3>
+  <ul>
+    <li>Mở terminal tại đúng project</li>
+    <li>gõ <code>claude</code></li>
+    <li>sau đó dùng slash command <code>/sdlc-lean &lt;yêu cầu&gt;</code></li>
+  </ul>
+
+  <h3>Cursor</h3>
+  <ul>
+    <li>mở đúng folder project trong Cursor</li>
+    <li>dùng <code>/sdlc-lean</code> hoặc <code>/finish</code></li>
+  </ul>
+
+  <h3>Antigravity / Codex</h3>
+  <ul>
+    <li>không có slash command</li>
+    <li>nói bằng lời, ví dụ: <code>Chạy sdlc-workflow new --module elcom.vms.ups "them tab ABC vao man hinh XYZ"</code></li>
+    <li>hoặc tự chạy CLI trong terminal rồi để agent code tiếp</li>
+  </ul>
+
+  <h2 id="8-tao-task-epic-moi">8. Tạo task / epic mới</h2>
+  <h3>Cách chuẩn</h3>
+  <p>Nếu task thuộc 1 module cụ thể, dùng <code>--module</code>:</p>
+  <pre><code>sdlc-workflow new --module elcom.vms.ups "them tab ABC vao man hinh XYZ"</code></pre>
+  <p>Nếu không muốn gắn module:</p>
+  <pre><code>sdlc-workflow new "tao api login"</code></pre>
+
+  <h3>Kết quả sau khi chạy</h3>
+  <ul>
+    <li>tạo folder epic mới trong <code>work/</code></li>
+    <li>tạo <code>epic-brief.md</code></li>
+    <li>tạo các file evidence template</li>
+    <li>tạo folder <code>figma/</code> cho epic đó</li>
+    <li>set con trỏ active:
+      <ul>
+        <li><code>work/&lt;module&gt;/.active</code> nếu có module</li>
+        <li><code>work/.active</code> nếu không có module</li>
+      </ul>
+    </li>
+  </ul>
+
+  <h2 id="9-cau-truc-folder-task">9. Cấu trúc folder task</h2>
+  <h3>Có module</h3>
+  <pre><code>work/elcom.vms.ups/
+├── .active
+└── 001-tim-component-a/
+    ├── epic-brief.md
+    ├── requirement-brief.md
+    ├── impact-analysis.md
+    ├── agent-impact-plan.md
+    ├── build-evidence.md
+    ├── test-evidence.md
+    ├── review-evidence.md
+    ├── rollback-plan.md
+    ├── adr.md
+    └── figma/
+        ├── README.md
+        └── .gitkeep</code></pre>
+
+  <h3>Không có module</h3>
+  <pre><code>work/
+├── .active
+└── 001-legacy-task/
+    ├── epic-brief.md
+    └── ...</code></pre>
+
+  <h2 id="10-lam-task-cu-the-theo-tung-buoc">10. Làm task cụ thể theo từng bước</h2>
+  <p>Ví dụ: bạn muốn thêm 1 tab nhỏ vào màn hình có sẵn.</p>
+
+  <h3>Bước 1 — xác định project và module</h3>
+  <p>Bạn đang ở đúng project. Xác định màn hình đó thuộc module nào, ví dụ: <code>elcom.vms.ups</code> hoặc <code>billing</code>.</p>
+
+  <h3>Bước 2 — mở epic mới</h3>
+  <pre><code>sdlc-workflow new --module elcom.vms.ups "them tab ABC vao man hinh XYZ"</code></pre>
+
+  <h3>Bước 3 — xem epic active là gì</h3>
+  <pre><code>Get-Content work/elcom.vms.ups/.active</code></pre>
+  <p>Sau đó mở folder:</p>
+  <pre><code>work/elcom.vms.ups/001-them-tab-abc/</code></pre>
+
+  <h3>Bước 4 — điền <code>epic-brief.md</code></h3>
+  <p>Mở file <code>epic-brief.md</code> và điền rõ:</p>
+  <ul>
+    <li><strong>Tôi muốn</strong></li>
+    <li><strong>Dữ liệu đầu vào</strong></li>
+    <li><strong>Kết quả mong muốn</strong></li>
+  </ul>
+
+  <h3>Bước 5 — nếu có UI, copy ảnh Figma vào <code>figma/</code></h3>
+  <p>Nếu thiết kế UI, export frame từ Figma ra PNG rồi copy vào:</p>
+  <pre><code>work/elcom.vms.ups/001-them-tab-abc/figma/</code></pre>
+  <p>Ví dụ:</p>
+  <pre><code>work/elcom.vms.ups/001-them-tab-abc/figma/tab-abc.png</code></pre>
+  <p>Nếu chỉ có ảnh, vẫn dùng được. Không cần dev-mode HTML/CSS.</p>
+
+  <h3>Bước 6 — yêu cầu agent thiết kế / code</h3>
+  <p>Ví dụ nói với agent:</p>
+  <pre><code>Thiết kế tab ABC theo ảnh trong figma của task này.
+Tab này gắn vào màn hình XYZ đang có sẵn.</code></pre>
+  <p>Agent sẽ:</p>
+  <ol>
+    <li>Clarify</li>
+    <li>Search</li>
+    <li>Impact plan</li>
+    <li>Dừng ở Approval Gate</li>
+    <li>Code + test + build sau khi bạn duyệt</li>
+    <li>Report</li>
+  </ol>
+
+  <h3>Bước 7 — duyệt impact plan</h3>
+  <p>Khi agent đưa impact plan:</p>
+  <ul>
+    <li>đọc file nào sẽ đổi</li>
+    <li>đọc side effects</li>
+    <li>xem test/build nào sẽ chạy</li>
+    <li>kiểm tra rollback path</li>
+  </ul>
+  <p>Chỉ khi bạn đồng ý mới cho làm tiếp.</p>
+
+  <h3>Bước 8 — chạy <code>finish</code></h3>
+  <p>Khi xong:</p>
+  <pre><code>sdlc-workflow finish --module elcom.vms.ups</code></pre>
+  <p>Nếu chỉ có 1 epic active thì có thể dùng:</p>
+  <pre><code>sdlc-workflow finish</code></pre>
+  <p>Sau đó hệ thống sẽ:</p>
+  <ul>
+    <li>đánh dấu epic done</li>
+    <li>sinh <code>SUMMARY.md</code></li>
+    <li>xóa con trỏ active của module đó</li>
+  </ul>
+
+  <h2 id="11-dung-voi-antigravity">11. Dùng với Antigravity</h2>
+  <p>Antigravity không có slash command.</p>
+  <p>Cách dùng:</p>
+  <ol>
+    <li><code>cd</code> vào đúng project</li>
+    <li>chạy <code>sdlc-workflow init</code></li>
+    <li>mở project bằng Antigravity</li>
+    <li>nói bằng lời, ví dụ: <code>Chạy sdlc-workflow new --module elcom.vms.ups "them tab ABC vao man hinh XYZ"</code></li>
+  </ol>
+  <p>Khi xong:</p>
+  <pre><code>Chạy sdlc-workflow finish --module elcom.vms.ups</code></pre>
+
+  <h2 id="12-dung-voi-claude-code-va-cursor">12. Dùng với Claude Code và Cursor</h2>
+  <h3>Claude Code</h3>
+  <ul>
+    <li>dùng <code>/sdlc-lean ...</code></li>
+    <li>dùng <code>/finish</code></li>
+  </ul>
+  <h3>Cursor</h3>
+  <ul>
+    <li>dùng <code>/sdlc-lean ...</code></li>
+    <li>dùng <code>/finish</code></li>
+  </ul>
+  <p>Cả hai agent này đã được <code>init</code> sinh sẵn command và rule.</p>
+
+  <h2 id="13-khi-nao-dung-figma">13. Khi nào dùng <code>figma/</code></h2>
+  <p>Dùng <code>figma/</code> khi task là UI/UX:</p>
+  <ul>
+    <li>redesign một màn hình</li>
+    <li>thêm tab mới</li>
+    <li>thêm popup/modal</li>
+    <li>chỉnh layout</li>
+  </ul>
+  <p>Bạn chỉ cần để ảnh vào <code>figma/</code> rồi nói agent làm theo ảnh đó.</p>
+
+  <h2 id="14-cac-loi-hay-gap">14. Các lỗi hay gặp</h2>
+  <h3><code>sdlc-workflow: command not found</code></h3>
+  <p>Chạy lại trong repo <code>sdlc-lean</code>:</p>
+  <pre><code>npm link</code></pre>
+
+  <h3><code>no active epic</code></h3>
+  <p>Chưa chạy <code>new</code>, hoặc đã <code>finish</code> xong rồi.</p>
+
+  <h3><code>multiple active epics</code></h3>
+  <p>Có nhiều module đang mở cùng lúc. Hãy dùng:</p>
+  <pre><code>sdlc-workflow finish --module &lt;module&gt;</code></pre>
+
+  <h3>Chạy nhầm thư mục</h3>
+  <p><code>pwd</code> / <code>Get-Location</code> để kiểm tra đang ở đúng project chưa.</p>
+
+  <h2 id="15-tom-tat-luong-ngan-nhat">15. Tóm tắt luồng ngắn nhất</h2>
+  <pre><code>cd D:\path\to\project
+sdlc-workflow init
+sdlc-workflow new --module elcom.vms.ups "them tab ABC vao man hinh XYZ"
+# copy ảnh vào work/elcom.vms.ups/001-.../figma/
+# ra lệnh agent thiết kế / code
+sdlc-workflow finish --module elcom.vms.ups</code></pre>
+
+  <h2 id="16-goi-y-van-hanh-thuc-te">16. Gợi ý vận hành thực tế</h2>
+  <ul>
+    <li>Mỗi project thật nên init 1 lần</li>
+    <li>Mỗi module có thể có epic active riêng</li>
+    <li>UI task nên luôn có <code>figma/</code></li>
+    <li>Nếu không chắc task thuộc module nào, hãy hỏi lại trước khi <code>new</code></li>
+  </ul>
+
+  <h2 id="17-ket-luan">17. Kết luận</h2>
+  <p>Quy trình chuẩn là:</p>
+  <ol>
+    <li>vào đúng project</li>
+    <li><code>sdlc-workflow init</code></li>
+    <li>mở epic bằng <code>new</code></li>
+    <li>bỏ ảnh Figma vào <code>figma/</code> nếu có UI</li>
+    <li>để agent chạy 6 bước</li>
+    <li>duyệt impact plan</li>
+    <li>code/test/build</li>
+    <li><code>finish</code></li>
+  </ol>
+</main>
+</body>
+</html>
